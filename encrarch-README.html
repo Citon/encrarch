@@ -1,0 +1,348 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.4: http://docutils.sourceforge.net/" />
+<title>encrarch - Encrypt and Archive</title>
+<style type="text/css">
+
+/*
+Author: Asi Behar for revver.com and rst2a.com
+Date: 2007/12/01
+Version: 0.2
+Copyright: This stylesheet has been placed in the public domain - free to edit and use for all uses.
+*/
+
+@import url(http://rst2a.com/static/styles/html/default.css);
+
+html, body, div, span, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, a, dl, dt, dd, ol, ul, li, table, tbody, tfoot, thead, tr, th, td {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	outline: 0;
+	font-weight: inherit;
+	font-style: inherit;
+	font-size: 100%;
+	font-family: Arial, Helvetica, sans-serif;
+	vertical-align: baseline;
+	background: transparent;
+    line-height: 1.2em;
+}
+
+body {line-height: 1; color: black; background: white; padding: 10px;}
+ol, ul { list-style: disc; }
+a { text-decoration: none; color: #000; font-size: 0.9em; }
+a:hover { text-decoration: none; font-size: 0.9em; color: #4e93b0; }
+
+table { border-collapse: collapse; border-spacing: 1; }
+caption, th, td { text-align: left; font-weight: normal;}
+
+.document h1.title { font-size: 1.8em; margin: .5em 0em; font-weight: bold; text-align: left; border-bottom: 1px solid #333; font-variant: small-caps;}
+.document .section h1 { font-size: 1.3em; margin: 1.3em 0 .5em 0; font-weight: bold; text-align: left; font-variant: small-caps;}
+.document .section .section h2 { font-weight: bold; font-size: 1.15em; }
+.document .section .section .section h3 { font-weight: bold;}
+.document p { margin: 0.8em 0.2em 0.8em 0.8em; font-size: 1em; }
+.document p a { color: #344c7c;  font-size: 1em !important;}
+
+.document .section .section { margin-left: 1.2em; margin-top: 1.2em}
+.document .section .section .section { margin: 1.1em 0 0 1.3em;}
+
+.document .section ul, .document .section ol  { margin-left: 3em; font-size: 0.94em; }
+.document .section ul li, .document .section ol li { margin: 3px 0; }
+.document ul.auto-toc, .document .contents ul { margin-left: 18px; list-style: none; }
+
+.document .section table { border: 3px solid #333; width: 100%;}
+.document .section table thead tr { background-color: #f3f3f3;}
+.document .section table thead tr th { font-weight: bold; text-align: left; padding: 0.3em 0.3em; margin: 0; border: 1px solid #666;  border-bottom: 2px solid #e3e3e3;}
+.document .section table tbody tr td { font-size: 0.85em; text-align: left; padding: 0.3em 0.3em; margin: 0; border: 1px solid #666;}
+.document .section table tbody tr td p { margin: 0; font-size: 1em;}
+.document .section table tbody tr td ul { margin: 0.3em 0.8em; font-size: 1em;}
+
+.document pre { border: 1px solid #e3e3e3; background-color: #f3f3f3; padding: 6px; font-family: monospace;}
+.document span.pre { font-family: monospace; background-color: transparent; font-size: 1.2em; font-weight: bold; color: #4488c2; }
+.document tt { background-color: transparent;}
+    
+    
+.document div.contents { background-color: #f3f3f3; border: 1px solid #e3e3e3; float:right; margin: 0 0 10px 20px; padding: 10px 20px 2px 20px; }
+.document div.contents a { color: #344c7c;}
+.document div.contents a:hover { color: #4e93b0;}
+.document div.contents .topic-title { margin-bottom: 8px; }
+.document div.contents .topic-title a {font-size: 1.2em; color: #000;}
+
+</style>
+</head>
+<body>
+<div class="document" id="encrarch-encrypt-and-archive">
+<h1 class="title">encrarch - Encrypt and Archive</h1>
+<p><strong>encrarch</strong> uses GnuPG to create an encrypted archive of one or more files in a source directory.  Its main use is for securely storing disk 2 disk backups on removable media, like external hard drives.  The removable media can be manually rotated on a schedule to create weekly, monthly, yearly, etc. archives.</p>
+<p><strong>encrarch</strong> relies on GnuPG.  Safe key handling is crucial to the security of the system, and your ability to recover from the encrypted backups.  (See PRECAUTIONS)</p>
+<div class="section">
+<h1><a id="requirements" name="requirements">REQUIREMENTS</a></h1>
+<ul class="simple">
+<li>Designed for UNIX/Linux - May require modification to run on Windows</li>
+<li>Python 2.6+</li>
+<li>GnuPG</li>
+</ul>
+</div>
+<div class="section">
+<h1><a id="installation" name="installation">INSTALLATION</a></h1>
+<ul class="simple">
+<li>Install the python-gnupg package from <a class="reference" href="http://code.google.com/p/python-gnupg/">http://code.google.com/p/python-gnupg/</a>
+(Example shows fetching current version - Adjust accordingly)</li>
+</ul>
+<pre class="literal-block">
+cd /tmp
+wget &quot;http://python-gnupg.googlecode.com/files/python-gnupg-0.2.8.tar.gz&quot;
+tar xvzf python-gnupg-0.2.8.tar.gz
+cd python-gnupg-0.2.8
+python setup.py install
+</pre>
+<ul class="simple">
+<li>For standard systems, copy encrarch.py into /usr/local/bin</li>
+</ul>
+<pre class="literal-block">
+cp encrarch.py /usr/local/bin
+</pre>
+<ul class="simple">
+<li>For Qnap or other systems that use a &quot;ramdrive&quot; that is erased on boot up, store <em>encrarch.py</em> in a persistent location.  (For instance, on Qnap, under a share.)  <strong>GnuPG settings and keys will also be lost on reboot for most of these systems.  Make sure to save the user's ~/.gnupg folder after making changes.  A simple script to copy this back into place on boot will take care of the rest.</strong></li>
+</ul>
+</div>
+<div class="section">
+<h1><a id="gnupg-setup-and-key-handling" name="gnupg-setup-and-key-handling">GNUPG SETUP AND KEY HANDLING</a></h1>
+<p>For those unfamiliar with Gnu Privacy Guard, some basic setup is required before use.</p>
+<ul class="simple">
+<li>A pubic/secret keypair must be created.  As the user that will run <em>encrarch.py</em>, you can create a new key as follows:</li>
+</ul>
+<pre class="literal-block">
+gpg --gen-key
+
+# Choose RSA and RSA for the key type
+# Choose 2048 as the key size
+# Set key NOT to expire (0)
+# Confirm that the key should not expire at all
+# Set a real name for the key like &quot;HOSTNAME encrarch&quot; - Example: &quot;nas1 encrarch&quot;
+# Set an email address like hostname.encrarch&#64;customerdomain - Example: nas1.encrarch&#64;example.net
+# Set a comment if desired
+# Press O to okay the key settings
+# Enter a STRONG passphrase - DO NOT REUSE THIS PHRASE OR USE AN EXISTING PASSWORD!
+# Note the pub key's ID, which follows &quot;pub 2048/&quot; in the returned text.  (You can also use gpg --list-keys to view the ID)
+</pre>
+<ul class="simple">
+<li>Note the key ID!  This will be used in the configuration</li>
+<li>For best performance with good security, add the next two lines to the users ~/.gnupg/gpg.conf file to disable compression and use the fast and secure AES-128 cipher:</li>
+</ul>
+<pre class="literal-block">
+personal-compress-preferences Uncompressed
+personal-cipher-preferences AES
+</pre>
+<ul class="simple">
+<li>Remember that ramdrive based systems will often DELETE /root/ and other user folders on reboot, so copy the ~/.gnupg folder to a persistent location on the system before rebooting!</li>
+</ul>
+<p>This is the single most import part of this whole system: <strong>IF YOU LOSE THE SECRET KEY, YOU CAN NOT READ THE ARCHIVES!</strong> ALWAYS make an emergency backup of your secret (private) key!</p>
+<ul class="simple">
+<li>Insert an empty and formatted USB stick (preferably very small) into the system</li>
+<li>Change directory to the base of the mounted thumb drive</li>
+</ul>
+<pre class="literal-block">
+cd /mount/sda1
+</pre>
+<ul class="simple">
+<li>Export your public and private keyrings to armored text files:</li>
+</ul>
+<pre class="literal-block">
+# Use of a descriptive filename will help prevent confusion - SYSTEMNAME-YYYY-MM-DD is shown:
+gpg -a --export &gt; SYSTEMNAME-YYYY-MM-DD-public.asc
+gpg -a --export-secret-keys &gt; SYSTEMNAME-YYYY-MM-DD-private.asc
+
+# Example: If the system was named ancient1 and the date was Jan. 13th, 1045:
+gpg -a --export &gt; ancient1-1045-01-13-public.asc
+gpg -a --export-secret-keys &gt; ancient1-1045-01-13-private.asc
+</pre>
+<ul class="simple">
+<li>You may want to also copy this document (that you are reading right now) to the USB drive for an emergency reference.</li>
+<li><strong>UNMOUNT THE THUMBDRIVE IMMEDIATELY AND STORE IN A VERY SECURE PLACE!</strong> - The exported keys are NOT protected!!</li>
+<li><em>To import your private and public keys from the backup copy:</em></li>
+</ul>
+<pre class="literal-block">
+gpg --import &lt; IMPORTKEYFILE
+</pre>
+</div>
+<div class="section">
+<h1><a id="precautions" name="precautions">PRECAUTIONS</a></h1>
+<p><strong>READ THESE PRECAUTIONS CAREFULLY!</strong> Failure to follow these guidelines may result in a useless archive or data theft!  Note the massive overuse of bold text and capitals below are for good reason.  Yes: I am yelling!</p>
+<ul class="simple">
+<li><strong>PRIVATE KEYS EXPORTED TO USB DRIVES ARE NOT ENCRYPTED!!!!</strong> - Unmount the drive and store in a safety deposit box or safe. It is for emergency use ONLY!</li>
+<li><strong>YOUR DATA WILL NOT BE READABLE WITHOUT THE PRIVATE (SECRET) PGP KEY!!!</strong> - Make sure to save the USB backup somewhere safe. This can be in the same vault or remote location as the removable hard drives containing the encrypted files.</li>
+<li><strong>NEVER TRANSPORT THE USB BACKUP KEY WITH ANY DEVICE CONTAINING FILES ENCRYPTED FOR THE KEY!!!</strong> - If lost or stolen, someone with both the USB key and any form of encrypted files WILL be able to decrypt the files.</li>
+<li><strong>IF YOU ARE USING A QNAP OR OTHER NAS WITH A RAMDISK</strong> - You need to take additional steps to SAVE the PGP keys on your system so they will not be lost on a reboot!</li>
+<li><strong>TEST YOUR RECOVERY PROCESS!!!</strong> - What good is a backup you can't use?  Make sure to test your backup process, and include test recoveries of <em>encrarch</em> created archives with your regular disaster recovery tests.</li>
+</ul>
+</div>
+<div class="section">
+<h1><a id="configuration" name="configuration">CONFIGURATION</a></h1>
+<p>encrarch requires a Python configparser configuration file.  (Future versions may support full configuration via command line.)</p>
+<p>Use the included <em>encrarch.conf-SAMPLE</em> as a starting point, copying it to <em>/etc/encrarch.conf</em> (standard systems) or in a safe/persistent location (Qnap/other flash systems).  If the file is not named <em>/etc/encrarch.conf</em>, you must set it via command line with the <em>-c CONFIGFILE</em> option.  Each configuration file defines a source, a destination, and a key to encrypt to.  Use multiple files as needed.</p>
+<p>The following outlines configuration steps, showing example settings that may or may not be useful.  You MUST customize your configuration!</p>
+<ul class="simple">
+<li>Set an &quot;instance&quot; name - This is to distinguish between multiple jobs.  (The default of &quot;encrarch&quot; is fine if you are only running one encrarch job)</li>
+</ul>
+<pre class="literal-block">
+instancename = encrarch
+</pre>
+<ul class="simple">
+<li>Set the sourcebase to the directory you want to copy from.  This can contain subdirectories - encrarch will search for files to backup</li>
+</ul>
+<pre class="literal-block">
+sourcebase = /mnt/backups
+</pre>
+<ul class="simple">
+<li>Set the source file matching pattern.  For most D2D backups, using <em>.&lt;SUFFIXNAME&gt; is suitable.  (</em>.vbk for Veeam, <em>.spf|</em>.spi for Shadow Protect, etc)  See pydoc fnmatch for more information</li>
+</ul>
+<pre class="literal-block">
+sourcematch = \*.vbk
+</pre>
+<ul class="simple">
+<li>Set the base directory to archive to.  Archived files will be stored in time stamped subfolders of this base.</li>
+</ul>
+<pre class="literal-block">
+destroot = /mnt/save
+</pre>
+<ul class="simple">
+<li>Date format for first subfolder under destroot to save to - See the strftime() Python documentation for more options.  The default is %Y-%m which is YYYY-MM.  Using %Y-%m, you can call this every day and over time will end up with one folder per-month containing the last backup of the month.</li>
+</ul>
+<pre class="literal-block">
+destdateformat = %Y-%m
+</pre>
+<ul class="simple">
+<li>For large jobs, you may want to use a temp space to store a copy of the files being encrypted.  Set the tempbase value if you want to enable this behavior</li>
+</ul>
+<pre class="literal-block">
+tempbase = /mnt/scratchdrive
+</pre>
+<ul class="simple">
+<li>In some cases, you may even want to keep the temp copy around.  Set temppreserve to true to prevent deletion of temp files after encrypting</li>
+</ul>
+<pre class="literal-block">
+temppreserve = true
+</pre>
+<ul class="simple">
+<li>You must set the GnuPG key you wish to encrypt TO.  Use &quot;gpg --list-keys&quot; to find the fingerprint, which is a 8 character hex value.  For example, for this output</li>
+</ul>
+<pre class="literal-block">
+pub   2048D/A7D02D34 2011-01-09 [expires: 2013-01-08]
+uid                  Paul M. Person &lt;paulguy&#64;thepaulguy.int&gt;
+</pre>
+<ul class="simple">
+<li>the ID is A7D02D34 and the configuration would be</li>
+</ul>
+<pre class="literal-block">
+encryptto = A7D02D34
+</pre>
+<ul class="simple">
+<li>Email reports can be sent on &quot;errors&quot; or &quot;all&quot; conditions.  Comment out the emailon line if you do not want to send email</li>
+</ul>
+<pre class="literal-block">
+emailon = errors
+</pre>
+<ul class="simple">
+<li>If emailon is set, you must configure an SMTP server IP or domain name - SMTP auth is not supported at this time, so add the IP of the machine running encrarch to the list of allowed IPs in your SMTP server</li>
+</ul>
+<pre class="literal-block">
+smtpserver = 10.11.12.13
+</pre>
+<ul class="simple">
+<li>emailon also requires one or more email addresses to notify via email - Separate multiple addresses with commas</li>
+</ul>
+<pre class="literal-block">
+emailto = jerry.only&#64;misfits.int, danzig&#64;danzigcorp.net
+</pre>
+<ul class="simple">
+<li>Set the from email address</li>
+</ul>
+<pre class="literal-block">
+emailfrom  = encrarch&#64;example.int
+</pre>
+<ul class="simple">
+<li>Set the prefix for the Subject: line in email notices.  Additional information is added after the prefix.  Note that in the example below, encrarch replaces %(instancename)s with the <em>instancename</em> set at the top.  The setting below is recommended</li>
+</ul>
+<pre class="literal-block">
+emailsubject = [%(instancename)s]
+</pre>
+<ul class="simple">
+<li>While the logging module used by encrarch does allow for direct configuration via a config file, it is overkill at this time.  So, logging is always to syslog.  Set the level to log below.  The default is INFO.  Valid settings are: CRITICAL, ERROR, WARNING, INFO, or DEBUG</li>
+</ul>
+<pre class="literal-block">
+loglevel = DEBUG
+</pre>
+<ul class="simple">
+<li>Use of a PID file allows single-instance protection. This is usually fine as shown below</li>
+</ul>
+<pre class="literal-block">
+pidfile = /var/tmp/%(instancename)s.pid
+</pre>
+</div>
+<div class="section">
+<h1><a id="usage" name="usage">USAGE</a></h1>
+<p>If you run encrarch without any options, it will use the default configuration file <em>/etc/encrarch.conf</em></p>
+<pre class="literal-block">
+encrarch.py
+</pre>
+<p>Use the -c option to define an alternate configuration file</p>
+<pre class="literal-block">
+encrarch.py -c /some/other/encrarchconfig.conf
+</pre>
+<p>The encrarch process is as follows:</p>
+<ul class="simple">
+<li>The <em>sourcebase</em> path is searched for files matching <em>sourcematch</em></li>
+<li>Free space under <em>destroot</em> is checked.  encrarch aborts if the destination path does not have the required free space to hold the addition contents being copied. (The larger your source, the more free space required.)</li>
+<li>If <em>tempbase</em> is defined, subfolders matching the structure of <em>sourcebase</em> are created and then all files matching <em>sourcematch</em> are copied into the <em>tempbase</em> path</li>
+<li>File by file (for each matching <em>sourcematch</em>)</li>
+</ul>
+<blockquote>
+<ul class="simple">
+<li>The source file is read from out of <em>tempbase</em>, if
+set, or <em>sourcebase</em> if no temp base is defined</li>
+<li>The source file is encrypted using GnuPG and the <em>encrypto</em> key</li>
+<li>Encrypted data is written into <em>destroot</em>/<em>destdateformat</em>, where <em>destdateformat</em> is replaced using the current date.  If <em>tempbase</em> is used, the files are read from temp, else they are read directly from <em>sourcebase</em>.  Each file is saved to <em>SOURCEFILENAME.tmp</em> while writing</li>
+<li>Once encryption completes for the file, it is renamed to <em>SOURCEFILENAME</em></li>
+</ul>
+</blockquote>
+<ul class="simple">
+<li>While running, encrarch logs messages to STDERR and to syslog using the the DAEMON facility.  In most cases, this means messages appear in /var/log/messages.</li>
+<li>When complete, the free space in <em>destroot</em> is again checked.  A preemtive warning is sent if the next run would fail due to limited free space.</li>
+<li>If <em>emailon</em> is set, email notification will be sent on and error (if set to &quot;error&quot;) or for either and error or a normal result (if set to &quot;all&quot;)</li>
+<li>If <em>tempbase</em> IS set and <em>temppreserve</em> is NOT set, files are removed from <em>tempbase</em></li>
+</ul>
+<p>Recovery of data from an encrarch created archive set is a manual process, requiring free space to place the decrypted files and <strong>the GnuPG secret key</strong> to match the key used to encrypt.</p>
+<ul class="simple">
+<li>For each file you wish to recover:</li>
+</ul>
+<pre class="literal-block">
+gpg -do DESTINATIONFILENAME SOURCEFILENAME
+
+# For instance, if your archive is mounted under /mnt/sdc1, and you want
+# to recover the file &quot;FullBackup.vbk.gpg&quot; from /mnt/sdc1/2012-11/FullBackup/
+# to /share/Recovery/FullBackup.vbk :
+gpg -do /share/Recovery/FullBackup.vbk /mnt/sdc1/2012-11/FullBackup/FullBackup.vbk.gpg
+</pre>
+</div>
+<div class="section">
+<h1><a id="additional-information" name="additional-information">ADDITIONAL INFORMATION</a></h1>
+<ul class="simple">
+<li><em>pydoc encrarch</em> - Embedded documentation from encrarch.py</li>
+<li><em>man gpg</em> - GnuPG main manual page</li>
+</ul>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Authors:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+<p>Paul M. Hirsch &lt;<a class="reference" href="mailto:paul.hirsch&#64;citon.com">paul.hirsch&#64;citon.com</a>&gt;</p>
+</div>
+</div>
+</body>
+</html>
