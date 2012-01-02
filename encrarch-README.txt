@@ -214,7 +214,7 @@ The following outlines configuration steps, showing example settings that may or
 
  loglevel = DEBUG
 
-* Use of a PID file allows single-instance protection. This is usually fine as shown below
+* Use of a PID file allows *encrarch* to exit if another run of the same instanc e name is in progress.  The setting below is usually fine, and will update automaticlly based on the instancename.
 
 ::
 

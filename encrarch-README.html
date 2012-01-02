@@ -276,7 +276,7 @@ emailsubject = [%(instancename)s]
 loglevel = DEBUG
 </pre>
 <ul class="simple">
-<li>Use of a PID file allows single-instance protection. This is usually fine as shown below</li>
+<li>Use of a PID file allows <em>encrarch</em> to exit if another run of the same instanc e name is in progress.  The setting below is usually fine, and will update automaticlly based on the instancename.</li>
 </ul>
 <pre class="literal-block">
 pidfile = /var/tmp/%(instancename)s.pid

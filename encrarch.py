@@ -7,14 +7,14 @@
 #
 # ! Requires gnupg module from http://code.google.com/p/python-gnupg/ !
 #
-# Copyright 2011 Citon Computer Corporation
+# Copyright 2012 Citon Computer Corporation
 #
 # Author: Paul Hirsch <paul.hirsch@citon.com>
 
-VERSION = "v0.1 (2011-12-30)"
+VERSION = "v0.2 (2012-01-02)"
 
 # General imports
-import sys, os, errno, traceback, time, re
+import sys, os, errno, traceback, time, re, datetime
 
 # File and encryption handling
 import fnmatch, shutil, gnupg
@@ -58,8 +58,9 @@ def roomForFiles(sourcebase, sources, destfolder):
     """
     Check if there is room for the given file set in the given destfolder
     Sources must be an array of arrays with file/patch pairs as members.
-    Returns the available space minus the require additional space - Negative
-    values mean bad!
+    Returns two values:
+     * The available space minus the required space. (Negative values are bad!)
+     * The required space by itself
     """
 
     # Add up numbers
@@ -67,7 +68,7 @@ def roomForFiles(sourcebase, sources, destfolder):
     for sourcefile, relpath in sources:
         tsize += os.stat(os.path.normpath(os.sep.join((sourcebase,relpath,sourcefile)))).st_size
 
-    return getFreeSpace(destfolder) - tsize
+    return (getFreeSpace(destfolder) - tsize, tsize)
 
 
 def makeDirTree (path):
@@ -377,10 +378,11 @@ class Configure(ConfigParser.ConfigParser):
         parser.add_option("-c", "--config", dest="conffile", help="use configuration from FILE", metavar="FILE")
         (options, args) = parser.parse_args()
         
-        if conffile in options:
-            conffile = options.conffile
-        else:
+        if options.conffile is None:
+            # No config passed, so try the default
             conffile = DEFCONFFILE
+        else:
+            conffile = options.conffile
 
         if not os.path.isfile(conffile):
             # This is just a quick check that the config file exists
@@ -506,6 +508,10 @@ def main ():
         elog.setFormatter(format)
         logger.addHandler(elog)
 
+    # Handy lambda to pretty print sizes - From Anonymous post to
+    # http://www.5dollarwhitebox.org/drupal/node/84
+    humansize = lambda s:[(s%1024**i and "%.1f"%(s/1024.0**i) or str(s/1024**i))+x.strip() for i,x in enumerate(' KMGTPEZY') if s<1024**(i+1) or i==8][0]
+    
     # Wrap main flow so we can email alert reliably
     try:
         # Check for parallel run and die if another is really running
@@ -532,10 +538,10 @@ def main ():
             raise GeneralError("No Files To Backup")
 
         # Check for required space on final destination drive
-        calcroom = roomForFiles(sets['sourcebase'], sources, sets['destroot'])
+        (calcroom, reqspace) = roomForFiles(sets['sourcebase'], sources, sets['destroot'])
 
         if calcroom < 0:
-            logger.error("Insufficient space under %s to hold total archive size! Free %d bytes to allow archive" % (sets['destroot'], abs(calcroom)))
+            logger.error("Insufficient space under %s to hold total archive size of %sB! Free %sB to allow archive" % (sets['destroot'], humansize(reqspace), humansize(abs(calcroom))))
             raise CapacityError(calcroom, "Low Pre-Archive Destination Space")
 
         # If using a temp location, copy our sources to it
@@ -555,18 +561,18 @@ def main ():
 
         # Shut it down and report elapsed time
         endtime = time.time()
-        logger.debug("Completed after %d seconds" % int(endtime - starttime))
+        logger.debug("Completed archiving of %sB after %s" % (humansize(reqspace), datetime.timedelta(seconds=int(endtime - starttime))))
 
         # Recheck free space - We need to notify the user if the NEXT archive run is
-        # likely to fail so they have time to switch out destinations
-        calcroom = roomForFiles(sets['sourcebase'], sources, sets['destroot'])
+        # likely to fail so they have time to switch out destinations.
+        (calcroom, reqspace) = roomForFiles(sets['sourcebase'], sources, sets['destroot'])
 
         if calcroom < 0:
-            logger.error("Preemptive notice: Next archive may fail!  Low space on %s - Please free %d bytes before next archive" % (sets['destroot'], abs(calcroom)))
+            logger.error("Preemptive notice: Next archive may fail!  Low space on %s - Please free %sB before next archive" % (sets['destroot'], humansize(abs(calcroom))))
             raise CapacityError(calcroom, "Low Post-Archive Destination Space")
 
     except CapacityError as detail:
-        if 'emailon' in sets: elog.send("Destination Capacity Insufficient", "Please free at least %d bytes on %s" % (detail.overage, sets['destroot']))
+        if 'emailon' in sets: elog.send("Destination Capacity Insufficient", "Please free at least %sB on %s" % (humansize(detail.overage), sets['destroot']))
         sys.exit(1)
     except GeneralError as detail:
         if 'emailon' in sets: elog.send("Problems Encountered", "GeneralError: %s\r\nPlease review the log and investigate as needed" % detail)
@@ -579,7 +585,7 @@ def main ():
         raise
     else:
         if (('emailon' in sets) and (sets['emailon'] == "all")):  
-            elog.send("Archive Completed Without Errors", "Job completed normally. Archived/encrypted from %s to %s" % (sets['sourcebase'], sets['destbase']))
+            elog.send("Archive Completed Without Errors", "Job completed normally. Archived/encrypted from %s to %s" % (sets['sourcebase'], sets['destroot']))
  
     finally:
         # Clear our temp files if being used and set to clear temp
