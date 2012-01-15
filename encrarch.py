@@ -11,7 +11,7 @@
 #
 # Author: Paul Hirsch <paul.hirsch@citon.com>
 
-VERSION = "v0.2 (2012-01-02)"
+VERSION = "v0.3 (2012-01-15)"
 
 # General imports
 import sys, os, errno, traceback, time, re, datetime
@@ -24,7 +24,7 @@ import ConfigParser   # XXX - Change to "configparser" for Python 3.0
 import optparse  # Should add argparse support down the road
 
 # Logging imports
-import logging, logging.handlers, smtplib, syslog
+import signal, logging, logging.handlers, smtplib, syslog
 from email.mime.text import MIMEText
 
 # Defaults
@@ -109,6 +109,22 @@ def clearTempSource (source, tempbase):
     for (filename, relpath) in source:
         destpath = os.path.normpath(os.sep.join((tempbase, relpath)))
         os.unlink(destpath)
+
+
+def fixupHomePath ():
+    """
+    Set the HOME environment variable - Workaround for use with simplified
+    versions of cron that do not set HOME or accept setting HOME in the
+    crontab
+    """
+
+    # Expand ~ - Uses HOME if set or gets from /etc/passwd if not
+    home = os.path.expanduser('~')
+    if home == '~':
+        raise GeneralError("Can not get user's home directory - Required for GPG!")
+
+    os.environ['HOME'] = home
+    return home
 
 
 def lookupKeyFingerprint (fingerprint):
@@ -320,11 +336,35 @@ class singleInstance(object):
             os.unlink(self.pidPath)
 
 
+def signal_numtoname (num):
+    """
+    Convert signum to name - Thanks http://www.secnetix.de/olli/Python/tricks.hawk!
+    """
+    name = []
+    for key in signal.__dict__.keys():
+        if key.startswith("SIG") and getattr(signal, key) == num:
+            name.append(key)
+    if len(name) == 1:
+        return name[0]
+    else:
+        return str(num)
+
+
+def termHandler(signum, frame):
+    """
+    Handle SIGTERM (or other caught signals) and raise TermError
+    """
+    sigdesc = "%s (%d)" % (signal_numtoname(signum), signum)
+
+    raise TermError(sigdesc)
+
+
 class Error(Exception):
     """
     Base class for custom exceptions
     """
     pass
+
 
 class CapacityError(Error):
     """
@@ -340,6 +380,21 @@ class CapacityError(Error):
         Return the stored message
         """
         return self.msg
+
+
+class TermError(Error):
+    """
+    Set as signal handler - We want to try and alert on SIGTERM
+    """
+
+    def __init__(self, sigdesc):
+        self.sigdesc = sigdesc
+
+    def __str__(self):
+        """
+        Return the stored message
+        """
+        return "Received signal %s" % self.sigdesc
 
 
 class GeneralError(Error):
@@ -441,8 +496,8 @@ class Configure(ConfigParser.ConfigParser):
         # Process optionals to allow for less error prone handling going forward
         settings['instancename'] = self.get('encrarch', 'instancename', 'encrarch')
 
-        if 'temppreserve' in settings:
-            settings['temppreserve'] = config['encrarch'].getboolean('temppreserve')
+        if self.has_option('encrarch', 'temppreserve'):
+            settings['temppreserve'] = self.boolcheck(self.get('encrarch', 'temppreserve')) 
         else:
             settings['temppreserve'] = False
         
@@ -462,6 +517,25 @@ class Configure(ConfigParser.ConfigParser):
         # Set the value right here to the logging friendly value
         settings['loglevel'] = getattr(logging, settings['loglevel'])
 
+        # Cleanup syslog and logfile settings
+        if self.has_option('encrarch', 'syslog'):
+            settings['syslog'] = self.boolcheck(self.get('encrarch', 'syslog'))
+        else:
+            settings['syslog'] = False
+
+        if self.has_option('encrarch', 'logfile'):
+            settings['logfile'] = self.get('encrarch', 'logfile')
+            if self.has_option('encrarch', 'logfilesize'):
+                settings['logfilesize'] = self.get('encrarch', 'logfilesize')
+            else:
+                settings['logfilesize'] = 0
+            if self.has_option('encrarch', 'logfilekeep'):
+                settings['logfilekeep'] = self.get('encrarch', 'logfilekeep')
+            else:
+                settings['logfilekeep'] = 0
+        else:
+            settings['logfile'] = False
+            
         # Save screened settings back to config 
         self.settings = settings
 
@@ -471,6 +545,24 @@ class Configure(ConfigParser.ConfigParser):
         """
         return self.settings
 
+    def boolcheck(self, value):
+        """
+        A more user-friendly True/False checker - Returns True on affirmative
+        including:
+         1
+         yes
+         YES
+         tRuE
+         Word
+         Si
+        All else is considered False
+        """
+
+        if re.match('^(1|yes|true|on|yo|si|word)$', value):
+            return True
+        else:
+            return False
+
 
 def main ():
     # Get configuration with our special Config class
@@ -478,6 +570,9 @@ def main ():
         conf = Configure()
     except Exception, err:
         sys.exit("Problem loading configuration: %s" % err)
+
+    # Set a handler to catch SIGTERM, the most typical outside killer
+    signal.signal(signal.SIGTERM, termHandler)
 
     # Pull settings hash for quick access
     sets = conf.get_settings()
@@ -497,23 +592,31 @@ def main ():
     clog.setFormatter(format)
     logger.addHandler(clog)
     
-    # Syslog - XXX - Should add ability to change log facility
-    slog = logging.handlers.SysLogHandler(facility=syslog.LOG_DAEMON)
-    logger.addHandler(slog)
-    
-    # Custom EmailReport handler - Designed to collect all messages and send
-    # one blast at the end
-    if 'emailon' in sets:
-        elog = EmailReportHandler(sets['smtpserver'], sets['emailfrom'], sets['emailto'], sets['emailsubject'])
-        elog.setFormatter(format)
-        logger.addHandler(elog)
 
     # Handy lambda to pretty print sizes - From Anonymous post to
     # http://www.5dollarwhitebox.org/drupal/node/84
     humansize = lambda s:[(s%1024**i and "%.1f"%(s/1024.0**i) or str(s/1024**i))+x.strip() for i,x in enumerate(' KMGTPEZY') if s<1024**(i+1) or i==8][0]
     
-    # Wrap main flow so we can email alert reliably
+    # Wrap main flow so we get output to logs on failure
     try:
+        # Syslog - XXX - Should add ability to change log facility
+        if sets['syslog']:
+            slog = logging.handlers.SysLogHandler(facility=syslog.LOG_DAEMON)
+            logger.addHandler(slog)
+    
+        # File log
+        if sets['logfile']:
+            flog = logging.handlers.RotatingFileHandler(sets['logfile'], mode='a', maxBytes=sets['logfilesize'], backupCount=sets['logfilekeep'])
+            flog.setFormatter(format)
+            logger.addHandler(flog)
+
+        # Custom EmailReport handler - Designed to collect all messages and send
+        # one blast at the end
+        if 'emailon' in sets:
+            elog = EmailReportHandler(sets['smtpserver'], sets['emailfrom'], sets['emailto'], sets['emailsubject'])
+            elog.setFormatter(format)
+            logger.addHandler(elog)
+    
         # Check for parallel run and die if another is really running
         thisapp = singleInstance(sets['pidfile'])
         if thisapp.alreadyrunning():
@@ -536,6 +639,9 @@ def main ():
         if not (len(sources)):
             logger.warn("No suitable files matching %s found in %s" % (sets['sourcematch'], sets['sourcebase']))
             raise GeneralError("No Files To Backup")
+
+        # Attempt to build our base path if it does not exist
+        makeDirTree(sets['destroot'])
 
         # Check for required space on final destination drive
         (calcroom, reqspace) = roomForFiles(sets['sourcebase'], sources, sets['destroot'])
@@ -571,21 +677,33 @@ def main ():
             logger.error("Preemptive notice: Next archive may fail!  Low space on %s - Please free %sB before next archive" % (sets['destroot'], humansize(abs(calcroom))))
             raise CapacityError(calcroom, "Low Post-Archive Destination Space")
 
+    #### Exception handler/logging collection - This is for all end of run cleanup
+    #### We want to avoid silent death
     except CapacityError as detail:
+        logger.warning("Destination Capacity Insufficient: Please free at least %sB on %s" % (humansize(detail.overage), sets['destroot']))
         if 'emailon' in sets: elog.send("Destination Capacity Insufficient", "Please free at least %sB on %s" % (humansize(detail.overage), sets['destroot']))
         sys.exit(1)
     except GeneralError as detail:
+        logger.warning("GeneralError: %s")
         if 'emailon' in sets: elog.send("Problems Encountered", "GeneralError: %s\r\nPlease review the log and investigate as needed" % detail)
         sys.exit(1)
+    except TermError as detail:
+        logger.info("Archive canceled: %s" % detail)
+        if 'emailon' in sets: elog.send("Archive Canceled", "Archive canceled: " % detail)
+        sys.exit(0)
     except KeyboardInterrupt:
+        logger.info("Archive canceled by user")
         if 'emailon' in sets: elog.send("Archive Canceled", "Archive canceled by user")
-        sys.exit(1)
+        sys.exit(0)
     except:
+        # Log the traceback as a single line
+        logger.error("Unexpected errors were encountered - Please review and forward to support: %s" % "; ".join(traceback.format_exc().splitlines()))
         if 'emailon' in sets: elog.send("Unhandled Problems Encountered", "Unexpected errors were encountered - Please review and forward to support:\r\n\r\n%s" % traceback.format_exc())
         raise
     else:
+        logger.info("Job completed normally. Encrypted/archived from %s to %s" % (sets['sourcebase'], sets['destroot']))
         if (('emailon' in sets) and (sets['emailon'] == "all")):  
-            elog.send("Archive Completed Without Errors", "Job completed normally. Archived/encrypted from %s to %s" % (sets['sourcebase'], sets['destroot']))
+            elog.send("Encryption and Archival Complete", "Job completed normally. Encrypted/archived from %s to %s" % (sets['sourcebase'], sets['destroot']))
  
     finally:
         # Clear our temp files if being used and set to clear temp

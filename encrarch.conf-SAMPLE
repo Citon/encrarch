@@ -46,6 +46,17 @@ temppreserve = true
 encryptto = A7D02D34
 
 
+# Log to syslog - Comment out to disable syslog logging.  Logs using the
+# DAEMON facility
+syslog = true
+
+# Log to a file - Comment out to disable
+logfile = "/tmp/encrarch.log"
+# How large the file should be allowed to grow = Set to 0 for unlimited
+logfilesize = 1048576
+# If a file size limit is set, define how many old files to keep
+logfilekeep = 7
+
 # Set the email reports to trigger on "errors" or "all" to enalbe email reports
 # Comment out if you do not want to send email
 emailon = errors

@@ -178,6 +178,30 @@ The following outlines configuration steps, showing example settings that may or
 
  encryptto = A7D02D34
 
+* Set syslog to true to enable writing log messages to the DAEMON syslog facility
+
+::
+
+ syslog = true
+
+* You can log to an optional log file - Set filelog to the name of the file to enable
+
+::
+
+ logfile = "/path/to/logfile"
+
+* If filelog is set, you can set a size limit (in bytes).  Set to 0 to allow infinite size. 1MB shown
+
+::
+
+ logfilesize = 1048576 
+
+* If a file size limit is set, you can set a number of old log files to keep
+
+::
+
+ logfilekeep = 7
+
 * Email reports can be sent on "errors" or "all" conditions.  Comment out the emailon line if you do not want to send email
 
 ::
