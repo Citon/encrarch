@@ -240,6 +240,30 @@ uid                  Paul M. Person &lt;paulguy&#64;thepaulguy.int&gt;
 encryptto = A7D02D34
 </pre>
 <ul class="simple">
+<li>Set syslog to true to enable writing log messages to the DAEMON syslog facility</li>
+</ul>
+<pre class="literal-block">
+syslog = true
+</pre>
+<ul class="simple">
+<li>You can log to an optional log file - Set filelog to the name of the file to enable</li>
+</ul>
+<pre class="literal-block">
+logfile = &quot;/path/to/logfile&quot;
+</pre>
+<ul class="simple">
+<li>If filelog is set, you can set a size limit (in bytes).  Set to 0 to allow infinite size. 1MB shown</li>
+</ul>
+<pre class="literal-block">
+logfilesize = 1048576
+</pre>
+<ul class="simple">
+<li>If a file size limit is set, you can set a number of old log files to keep</li>
+</ul>
+<pre class="literal-block">
+logfilekeep = 7
+</pre>
+<ul class="simple">
 <li>Email reports can be sent on &quot;errors&quot; or &quot;all&quot; conditions.  Comment out the emailon line if you do not want to send email</li>
 </ul>
 <pre class="literal-block">
