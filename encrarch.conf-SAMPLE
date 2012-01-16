@@ -35,6 +35,11 @@ tempbase = /share/veeamarchives
 # Default: false
 temppreserve = true
 
+# (Optional) Set the full path to the GnuPG home directory - Only needed
+# if you are calling as an alternate user or if HOME is incorrect for some
+# reason
+# gnupghome = /home/somedude/.gnupg
+
 # Specify the GnuPG key fingerprint ID you want to encrypt to - Use
 # "gpg --list-keys" to find the fingerprint, which is a 8 character hex value
 # For example, for this output:

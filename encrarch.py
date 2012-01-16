@@ -24,8 +24,8 @@ import ConfigParser   # XXX - Change to "configparser" for Python 3.0
 import optparse  # Should add argparse support down the road
 
 # Logging imports
-import signal, logging, logging.handlers, smtplib, syslog
-from email.mime.text import MIMEText
+import signal, logging, logging.handlers, smtplib, email, syslog
+#from email.mime.text import MIMEText
 
 # Defaults
 DEFCONFFILE = "/etc/encrarch.conf"
@@ -111,29 +111,28 @@ def clearTempSource (source, tempbase):
         os.unlink(destpath)
 
 
-def fixupHomePath ():
+def getGpgHome ():
     """
-    Set the HOME environment variable - Workaround for use with simplified
-    versions of cron that do not set HOME or accept setting HOME in the
-    crontab
+    Return the current user's .gnupg directory - Overcomes problems with
+    unset HOME environment variables
     """
 
     # Expand ~ - Uses HOME if set or gets from /etc/passwd if not
     home = os.path.expanduser('~')
     if home == '~':
         raise GeneralError("Can not get user's home directory - Required for GPG!")
-
-    os.environ['HOME'] = home
+    home = os.sep.join((home, '.gnupg'))
     return home
 
 
-def lookupKeyFingerprint (fingerprint):
+def lookupKeyFingerprint (gpghome, fingerprint):
     """
     Check for existence of a recipient key and return their first UID, or an
     empty string if not found
     """
+
     # Create our GnuPG instance
-    gpg = gnupg.GPG()
+    gpg = gnupg.GPG(gnupghome=gpghome)
 
     # Check that the recipient's key exists
     found = ""
@@ -145,12 +144,12 @@ def lookupKeyFingerprint (fingerprint):
             break
 
     if not (found):
-        raise Exception, "Could not find key for fingerprint ID " + fingerprint
+        raise GeneralError("Could not find key for fingerprint ID %s" % fingerprint)
 
     return found
 
 
-def encryptSourcesToDestination (source, tempbase, destbase, recipient, logger):
+def encryptSourcesToDestination (source, tempbase, destbase, gpghome, recipient, logger):
     """
     Take an array of filename, path pairs and run through GnuPGP, encrypting
     for recipient (a key ID) and outputting to files under the destination path.
@@ -159,7 +158,7 @@ def encryptSourcesToDestination (source, tempbase, destbase, recipient, logger):
     destfiles = []
 
     # Create our GnuPG instance
-    gpg = gnupg.GPG()
+    gpg = gnupg.GPG(gnupghome=gpghome)
 
     for (filename, basepath) in source:
         destpath = os.path.normpath(os.sep.join((destbase, basepath)))
@@ -270,7 +269,8 @@ class EmailReportHandler(logging.Handler):
         body += "\r\nStart Time: %s" % self.starttime
         body += "\r\nEnd Time  : %s" % time.strftime("%Y-%m-%d %H:%M:%S") 
         body += "\r\n\r\n" + self.buf
-        msg = MIMEText(body)
+
+        msg = email.Message.Message()
 
         # Check maximum level and add a special note in the subject for anything
         # above INFO
@@ -280,14 +280,18 @@ class EmailReportHandler(logging.Handler):
             notice = ""
 
         # Build our message header
-        msg['Subject'] = self.subjectprefix + " " + notice + subject
-        msg['From'] = self.fromaddr
-        msg['To'] = "; ".join(self.toaddrs)
+        msg.add_header('From', self.fromaddr)
+        for t in self.toaddrs:
+            msg.add_header('To', t)
+        msg.add_header('Subject', "%s %s %s" % (self.subjectprefix, notice, subject))
+        msg.set_payload(body)
 
         # Fire!
         server = smtplib.SMTP(self.smtpserver)
+
         # server.set_debuglevel(1)
-        server.sendmail(self.fromaddr, self.toaddrs, msg.as_string())
+
+        server.sendmail(msg['From'], msg.get_all('To'), msg.as_string())
         server.quit()
 
 
@@ -479,10 +483,9 @@ class Configure(ConfigParser.ConfigParser):
                         errs += "\n* For SMTP reports, you must set '%s' in your configuration file" % item
                     else:
                         if item == 'emailto':
-                            settings[item] = self.get('encrarch', item).split(';')
+                            settings[item] = self.get('encrarch', item).split(',')
                         else:
                             settings[item] = self.get('encrarch', item)
-                        
                         
                 if errs:
                     # Spit out all missing parameters at once
@@ -495,6 +498,12 @@ class Configure(ConfigParser.ConfigParser):
 
         # Process optionals to allow for less error prone handling going forward
         settings['instancename'] = self.get('encrarch', 'instancename', 'encrarch')
+
+        # Allow override of default home for GnuPG
+        if self.has_option('encrarch', 'gnupghome'):
+            settings['gpghome'] = self.get('encrarch', 'gnupghome')
+        else:
+            settings['gpghome'] = getGpgHome()
 
         if self.has_option('encrarch', 'temppreserve'):
             settings['temppreserve'] = self.boolcheck(self.get('encrarch', 'temppreserve')) 
@@ -625,13 +634,9 @@ def main ():
             
         # Mark our start time
         starttime = time.time()
-            
+
         # Make sure the GPG key exists before wasting a bunch of cycles
-        try:
-            recuser = lookupKeyFingerprint(sets['encryptto'])
-        except:
-            logger.error("Could not find key for ID %s" % sets['encryptto'])
-            raise GeneralError("Missing PGP Key")
+        recuser = lookupKeyFingerprint(sets['gpghome'], sets['encryptto'])
 
         # Find our source files and copy into temp folders
         sources = findSourceFiles(sets['sourcematch'], sets['sourcebase'])
@@ -663,7 +668,7 @@ def main ():
         # Create dest folders and encrypt/compress files, saving into folders
         logger.info("Encrypting files for %s" % recuser)
 
-        encryptSourcesToDestination(sources, workingsourcebase, destbase, sets['encryptto'], logger)
+        encryptSourcesToDestination(sources, workingsourcebase, destbase, sets['gpghome'], sets['encryptto'], logger)
 
         # Shut it down and report elapsed time
         endtime = time.time()
@@ -684,7 +689,7 @@ def main ():
         if 'emailon' in sets: elog.send("Destination Capacity Insufficient", "Please free at least %sB on %s" % (humansize(detail.overage), sets['destroot']))
         sys.exit(1)
     except GeneralError as detail:
-        logger.warning("GeneralError: %s")
+        logger.warning("GeneralError: %s" % detail)
         if 'emailon' in sets: elog.send("Problems Encountered", "GeneralError: %s\r\nPlease review the log and investigate as needed" % detail)
         sys.exit(1)
     except TermError as detail:

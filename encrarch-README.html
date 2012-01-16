@@ -227,6 +227,12 @@ tempbase = /mnt/scratchdrive
 temppreserve = true
 </pre>
 <ul class="simple">
+<li>If you are running encrarch as an alternate user, or if you have moved your GnuPG configuration and key files to an alternate location, you can set gnupghome to the full path for the alternate .gnupg folder.  If not set, the default is /home/USERNAME/.gnupg</li>
+</ul>
+<pre class="literal-block">
+gnupghome = /home/someotherdude/.gnupg
+</pre>
+<ul class="simple">
 <li>You must set the GnuPG key you wish to encrypt TO.  Use &quot;gpg --list-keys&quot; to find the fingerprint, which is a 8 character hex value.  For example, for this output</li>
 </ul>
 <pre class="literal-block">

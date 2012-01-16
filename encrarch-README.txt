@@ -165,6 +165,12 @@ The following outlines configuration steps, showing example settings that may or
 
  temppreserve = true
 
+* If you are running encrarch as an alternate user, or if you have moved your GnuPG configuration and key files to an alternate location, you can set gnupghome to the full path for the alternate .gnupg folder.  If not set, the default is /home/USERNAME/.gnupg 
+
+::
+
+ gnupghome = /home/someotherdude/.gnupg
+
 * You must set the GnuPG key you wish to encrypt TO.  Use "gpg --list-keys" to find the fingerprint, which is a 8 character hex value.  For example, for this output
 
 ::
