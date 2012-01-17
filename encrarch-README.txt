@@ -33,7 +33,7 @@ INSTALLATION
 
  cp encrarch.py /usr/local/bin
 
-* For Qnap or other systems that use a "ramdrive" that is erased on boot up, store *encrarch.py* in a persistent location.  (For instance, on Qnap, under a share.)  **GnuPG settings and keys will also be lost on reboot for most of these systems.  Make sure to save the user's ~/.gnupg folder after making changes.  A simple script to copy this back into place on boot will take care of the rest.**
+* For QNAP or other systems that use a "ramdrive" that is erased on boot up, store *encrarch.py* in a persistent location.  (For instance, on QNAP, under a share.)  **GnuPG settings and keys will also be lost on reboot for most of these systems.  Make sure to save the user's ~/.gnupg folder after making changes.  A simple script to copy this back into place on boot will take care of the rest.**
 
 
 GNUPG SETUP AND KEY HANDLING
@@ -65,7 +65,7 @@ For those unfamiliar with Gnu Privacy Guard, some basic setup is required before
  personal-compress-preferences Uncompressed
  personal-cipher-preferences AES
 
-* Remember that ramdrive based systems will often DELETE /root/ and other user folders on reboot, so copy the ~/.gnupg folder to a persistent location on the system before rebooting!
+* Remember that ramdrive based systems will often DELETE /root/ and other user folders on reboot, so copy the ~/.gnupg folder to a persistent location on the system before rebooting and use the gnupghome configuration option in your encrarch config to point to the alternate location.
 
 This is the single most import part of this whole system: **IF YOU LOSE THE SECRET KEY, YOU CAN NOT READ THE ARCHIVES!** ALWAYS make an emergency backup of your secret (private) key!
 
@@ -109,7 +109,7 @@ PRECAUTIONS
 
 * **NEVER TRANSPORT THE USB BACKUP KEY WITH ANY DEVICE CONTAINING FILES ENCRYPTED FOR THE KEY!!!** - If lost or stolen, someone with both the USB key and any form of encrypted files WILL be able to decrypt the files.
 
-* **IF YOU ARE USING A QNAP OR OTHER NAS WITH A RAMDISK** - You need to take additional steps to SAVE the PGP keys on your system so they will not be lost on a reboot!
+* **IF YOU ARE USING A QNAP OR OTHER NAS WITH A RAMDISK** - You need to take additional steps to SAVE the PGP keys on your system so they will not be lost on a reboot!  encrarch supports placing the user's keys and options into an alternate path instead of ~/.gnupg.
 
 * **TEST YOUR RECOVERY PROCESS!!!** - What good is a backup you can't use?  Make sure to test your backup process, and include test recoveries of *encrarch* created archives with your regular disaster recovery tests.
 
@@ -119,7 +119,7 @@ CONFIGURATION
 
 encrarch requires a Python configparser configuration file.  (Future versions may support full configuration via command line.)
 
-Use the included *encrarch.conf-SAMPLE* as a starting point, copying it to */etc/encrarch.conf* (standard systems) or in a safe/persistent location (Qnap/other flash systems).  If the file is not named */etc/encrarch.conf*, you must set it via command line with the *-c CONFIGFILE* option.  Each configuration file defines a source, a destination, and a key to encrypt to.  Use multiple files as needed.
+Use the included *encrarch.conf-SAMPLE* as a starting point, copying it to */etc/encrarch.conf* (standard systems) or in a safe/persistent location (QNAP/other flash systems).  If the file is not named */etc/encrarch.conf*, you must set it via command line with the *-c CONFIGFILE* option.  Each configuration file defines a source, a destination, and a key to encrypt to.  Use multiple files as needed.
 
 The following outlines configuration steps, showing example settings that may or may not be useful.  You MUST customize your configuration!
 
@@ -164,6 +164,12 @@ The following outlines configuration steps, showing example settings that may or
 ::
 
  temppreserve = true
+
+* If the gpg binary is not installed under a folder listed in your PATH, or if your PATH is not set, (as the case in some crude crons), gpgbinary should be set to the full path to your gpg binary. Uncomment to keep the default (just "gpg")
+
+::
+
+ gpgbinary = /opt/gnupg/bin/gpg
 
 * If you are running encrarch as an alternate user, or if you have moved your GnuPG configuration and key files to an alternate location, you can set gnupghome to the full path for the alternate .gnupg folder.  If not set, the default is /home/USERNAME/.gnupg 
 
@@ -280,7 +286,7 @@ The encrarch process is as follows:
  - Once encryption completes for the file, it is renamed to *SOURCEFILENAME*
 
 * While running, encrarch logs messages to STDERR and to syslog using the the DAEMON facility.  In most cases, this means messages appear in /var/log/messages. 
-* When complete, the free space in *destroot* is again checked.  A preemtive warning is sent if the next run would fail due to limited free space.
+* When complete, the free space in *destroot* is again checked.  A preemptive warning is sent if the next run would fail due to limited free space.
 * If *emailon* is set, email notification will be sent on and error (if set to "error") or for either and error or a normal result (if set to "all")
 * If *tempbase* IS set and *temppreserve* is NOT set, files are removed from *tempbase*
 

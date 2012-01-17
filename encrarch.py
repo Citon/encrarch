@@ -11,7 +11,7 @@
 #
 # Author: Paul Hirsch <paul.hirsch@citon.com>
 
-VERSION = "v0.3 (2012-01-15)"
+VERSION = "v0.32 (2012-01-17)"
 
 # General imports
 import sys, os, errno, traceback, time, re, datetime
@@ -107,7 +107,7 @@ def clearTempSource (source, tempbase):
     Clear the given source/path pairs out of tempbase
     """
     for (filename, relpath) in source:
-        destpath = os.path.normpath(os.sep.join((tempbase, relpath)))
+        destpath = os.path.normpath(os.sep.join((tempbase, relpath, filename)))
         os.unlink(destpath)
 
 
@@ -125,14 +125,14 @@ def getGpgHome ():
     return home
 
 
-def lookupKeyFingerprint (gpghome, fingerprint):
+def lookupKeyFingerprint (gpgbinary, gpghome, fingerprint):
     """
     Check for existence of a recipient key and return their first UID, or an
     empty string if not found
     """
 
     # Create our GnuPG instance
-    gpg = gnupg.GPG(gnupghome=gpghome)
+    gpg = gnupg.GPG(gpgbinary=gpgbinary, gnupghome=gpghome)
 
     # Check that the recipient's key exists
     found = ""
@@ -149,16 +149,26 @@ def lookupKeyFingerprint (gpghome, fingerprint):
     return found
 
 
-def encryptSourcesToDestination (source, tempbase, destbase, gpghome, recipient, logger):
+def encryptSourcesToDestination (source, tempbase, destbase, gpgbinary, gpghome, recipient, logger):
     """
     Take an array of filename, path pairs and run through GnuPGP, encrypting
     for recipient (a key ID) and outputting to files under the destination path.
-    Also takes logger as argument.  Returns a new filename, path pair array
+    Takes the following arguments (should switch to named, but just have not)
+    * source - An array of filename/path pairs
+    * tempbase - If using a temporary store, location of temp copies of files.
+      (Else, set to the same as the source base path_
+    * destbase - Base path to copy encrypted files into, mirroring the source path
+    * gpgbinary - Name of GnuPG binary
+    * gpghome - Home folder for GnuPG configuration files, keys, etc for user
+    * recipient - PGP key to encrypt to
+    * logger - logging class instance
+
+    (Yes - This thing cries out for wrapping in a class... later!)
     """
     destfiles = []
 
     # Create our GnuPG instance
-    gpg = gnupg.GPG(gnupghome=gpghome)
+    gpg = gnupg.GPG(gpgbinary=gpgbinary, gnupghome=gpghome)
 
     for (filename, basepath) in source:
         destpath = os.path.normpath(os.sep.join((destbase, basepath)))
@@ -416,7 +426,8 @@ class GeneralError(Error):
 
 class Configure(ConfigParser.ConfigParser):
     """
-    Read and maintain configuration settings - Customized for this program
+    Read and maintain configuration settings - Customized for this program.
+    All supported options must be filtered/copied in by this class
     """
 
     def __init__(self):
@@ -499,14 +510,31 @@ class Configure(ConfigParser.ConfigParser):
         # Process optionals to allow for less error prone handling going forward
         settings['instancename'] = self.get('encrarch', 'instancename', 'encrarch')
 
-        # Allow override of default home for GnuPG
+        # Allow override for gpg binary and default home for GnuPG
+        if self.has_option('encrarch', 'gpgbinary'):
+            gb = self.get('encrarch', 'gpgbinary')
+            # Quick sanity check on path
+            if os.path.exists(gb) and os.path.isfile(gb) and os.access(gb, os.X_OK):
+                settings['gpgbinary'] = gb
+            else:
+                raise GeneralError("gpgbinary \"%s\" does not exist or is not executable" % gb)
+        else:
+            settings['gpgbinary'] = 'gpg'
+
         if self.has_option('encrarch', 'gnupghome'):
-            settings['gpghome'] = self.get('encrarch', 'gnupghome')
+            gh = self.get('encrarch', 'gnupghome')
+            # Quick sanity check - gnupg module will try to create missing path,
+            # which we don't want
+            if os.path.exists(gh) and os.path.isdir(gh) and os.access(gh, os.R_OK):
+                settings['gpghome'] = gh
+            else:
+                raise GeneralError("gnupghome \"%s\" missing or not readable for user" % gh)
         else:
             settings['gpghome'] = getGpgHome()
 
         if self.has_option('encrarch', 'temppreserve'):
-            settings['temppreserve'] = self.boolcheck(self.get('encrarch', 'temppreserve')) 
+            settings['temppreserve'] = self.boolcheck(self.get('encrarch', 'temppreserve'))
+
         else:
             settings['temppreserve'] = False
         
@@ -567,7 +595,7 @@ class Configure(ConfigParser.ConfigParser):
         All else is considered False
         """
 
-        if re.match('^(1|yes|true|on|yo|si|word)$', value):
+        if re.match('^(1|yes|true|on|yo|si|word)$', value, re.IGNORECASE):
             return True
         else:
             return False
@@ -635,15 +663,15 @@ def main ():
         # Mark our start time
         starttime = time.time()
 
-        # Make sure the GPG key exists before wasting a bunch of cycles
-        recuser = lookupKeyFingerprint(sets['gpghome'], sets['encryptto'])
-
         # Find our source files and copy into temp folders
         sources = findSourceFiles(sets['sourcematch'], sets['sourcebase'])
         
         if not (len(sources)):
             logger.warn("No suitable files matching %s found in %s" % (sets['sourcematch'], sets['sourcebase']))
             raise GeneralError("No Files To Backup")
+
+        # Make sure the GPG key exists before wasting a bunch of cycles
+        recuser = lookupKeyFingerprint(sets['gpgbinary'], sets['gpghome'], sets['encryptto'])
 
         # Attempt to build our base path if it does not exist
         makeDirTree(sets['destroot'])
@@ -668,7 +696,7 @@ def main ():
         # Create dest folders and encrypt/compress files, saving into folders
         logger.info("Encrypting files for %s" % recuser)
 
-        encryptSourcesToDestination(sources, workingsourcebase, destbase, sets['gpghome'], sets['encryptto'], logger)
+        encryptSourcesToDestination(sources, workingsourcebase, destbase, sets['gpgbinary'], sets['gpghome'], sets['encryptto'], logger)
 
         # Shut it down and report elapsed time
         endtime = time.time()

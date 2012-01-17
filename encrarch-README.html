@@ -105,7 +105,7 @@ python setup.py install
 cp encrarch.py /usr/local/bin
 </pre>
 <ul class="simple">
-<li>For Qnap or other systems that use a &quot;ramdrive&quot; that is erased on boot up, store <em>encrarch.py</em> in a persistent location.  (For instance, on Qnap, under a share.)  <strong>GnuPG settings and keys will also be lost on reboot for most of these systems.  Make sure to save the user's ~/.gnupg folder after making changes.  A simple script to copy this back into place on boot will take care of the rest.</strong></li>
+<li>For QNAP or other systems that use a &quot;ramdrive&quot; that is erased on boot up, store <em>encrarch.py</em> in a persistent location.  (For instance, on QNAP, under a share.)  <strong>GnuPG settings and keys will also be lost on reboot for most of these systems.  Make sure to save the user's ~/.gnupg folder after making changes.  A simple script to copy this back into place on boot will take care of the rest.</strong></li>
 </ul>
 </div>
 <div class="section">
@@ -137,7 +137,7 @@ personal-compress-preferences Uncompressed
 personal-cipher-preferences AES
 </pre>
 <ul class="simple">
-<li>Remember that ramdrive based systems will often DELETE /root/ and other user folders on reboot, so copy the ~/.gnupg folder to a persistent location on the system before rebooting!</li>
+<li>Remember that ramdrive based systems will often DELETE /root/ and other user folders on reboot, so copy the ~/.gnupg folder to a persistent location on the system before rebooting and use the gnupghome configuration option in your encrarch config to point to the alternate location.</li>
 </ul>
 <p>This is the single most import part of this whole system: <strong>IF YOU LOSE THE SECRET KEY, YOU CAN NOT READ THE ARCHIVES!</strong> ALWAYS make an emergency backup of your secret (private) key!</p>
 <ul class="simple">
@@ -175,14 +175,14 @@ gpg --import &lt; IMPORTKEYFILE
 <li><strong>PRIVATE KEYS EXPORTED TO USB DRIVES ARE NOT ENCRYPTED!!!!</strong> - Unmount the drive and store in a safety deposit box or safe. It is for emergency use ONLY!</li>
 <li><strong>YOUR DATA WILL NOT BE READABLE WITHOUT THE PRIVATE (SECRET) PGP KEY!!!</strong> - Make sure to save the USB backup somewhere safe. This can be in the same vault or remote location as the removable hard drives containing the encrypted files.</li>
 <li><strong>NEVER TRANSPORT THE USB BACKUP KEY WITH ANY DEVICE CONTAINING FILES ENCRYPTED FOR THE KEY!!!</strong> - If lost or stolen, someone with both the USB key and any form of encrypted files WILL be able to decrypt the files.</li>
-<li><strong>IF YOU ARE USING A QNAP OR OTHER NAS WITH A RAMDISK</strong> - You need to take additional steps to SAVE the PGP keys on your system so they will not be lost on a reboot!</li>
+<li><strong>IF YOU ARE USING A QNAP OR OTHER NAS WITH A RAMDISK</strong> - You need to take additional steps to SAVE the PGP keys on your system so they will not be lost on a reboot!  encrarch supports placing the user's keys and options into an alternate path instead of ~/.gnupg.</li>
 <li><strong>TEST YOUR RECOVERY PROCESS!!!</strong> - What good is a backup you can't use?  Make sure to test your backup process, and include test recoveries of <em>encrarch</em> created archives with your regular disaster recovery tests.</li>
 </ul>
 </div>
 <div class="section">
 <h1><a id="configuration" name="configuration">CONFIGURATION</a></h1>
 <p>encrarch requires a Python configparser configuration file.  (Future versions may support full configuration via command line.)</p>
-<p>Use the included <em>encrarch.conf-SAMPLE</em> as a starting point, copying it to <em>/etc/encrarch.conf</em> (standard systems) or in a safe/persistent location (Qnap/other flash systems).  If the file is not named <em>/etc/encrarch.conf</em>, you must set it via command line with the <em>-c CONFIGFILE</em> option.  Each configuration file defines a source, a destination, and a key to encrypt to.  Use multiple files as needed.</p>
+<p>Use the included <em>encrarch.conf-SAMPLE</em> as a starting point, copying it to <em>/etc/encrarch.conf</em> (standard systems) or in a safe/persistent location (QNAP/other flash systems).  If the file is not named <em>/etc/encrarch.conf</em>, you must set it via command line with the <em>-c CONFIGFILE</em> option.  Each configuration file defines a source, a destination, and a key to encrypt to.  Use multiple files as needed.</p>
 <p>The following outlines configuration steps, showing example settings that may or may not be useful.  You MUST customize your configuration!</p>
 <ul class="simple">
 <li>Set an &quot;instance&quot; name - This is to distinguish between multiple jobs.  (The default of &quot;encrarch&quot; is fine if you are only running one encrarch job)</li>
@@ -225,6 +225,12 @@ tempbase = /mnt/scratchdrive
 </ul>
 <pre class="literal-block">
 temppreserve = true
+</pre>
+<ul class="simple">
+<li>If the gpg binary is not installed under a folder listed in your PATH, or if your PATH is not set, (as the case in some crude crons), gpgbinary should be set to the full path to your gpg binary. Uncomment to keep the default (just &quot;gpg&quot;)</li>
+</ul>
+<pre class="literal-block">
+gpgbinary = /opt/gnupg/bin/gpg
 </pre>
 <ul class="simple">
 <li>If you are running encrarch as an alternate user, or if you have moved your GnuPG configuration and key files to an alternate location, you can set gnupghome to the full path for the alternate .gnupg folder.  If not set, the default is /home/USERNAME/.gnupg</li>
@@ -340,7 +346,7 @@ set, or <em>sourcebase</em> if no temp base is defined</li>
 </blockquote>
 <ul class="simple">
 <li>While running, encrarch logs messages to STDERR and to syslog using the the DAEMON facility.  In most cases, this means messages appear in /var/log/messages.</li>
-<li>When complete, the free space in <em>destroot</em> is again checked.  A preemtive warning is sent if the next run would fail due to limited free space.</li>
+<li>When complete, the free space in <em>destroot</em> is again checked.  A preemptive warning is sent if the next run would fail due to limited free space.</li>
 <li>If <em>emailon</em> is set, email notification will be sent on and error (if set to &quot;error&quot;) or for either and error or a normal result (if set to &quot;all&quot;)</li>
 <li>If <em>tempbase</em> IS set and <em>temppreserve</em> is NOT set, files are removed from <em>tempbase</em></li>
 </ul>
