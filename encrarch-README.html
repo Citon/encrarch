@@ -3,92 +3,324 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta name="generator" content="Docutils 0.4: http://docutils.sourceforge.net/" />
+<meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
 <title>encrarch - Encrypt and Archive</title>
 <style type="text/css">
 
 /*
-Author: Asi Behar for revver.com and rst2a.com
-Date: 2007/12/01
-Version: 0.2
-Copyright: This stylesheet has been placed in the public domain - free to edit and use for all uses.
+:Author: David Goodger (goodger@python.org)
+:Id: $Id: html4css1.css 5951 2009-05-18 18:03:10Z milde $
+:Copyright: This stylesheet has been placed in the public domain.
+
+Default cascading style sheet for the HTML output of Docutils.
+
+See http://docutils.sf.net/docs/howto/html-stylesheets.html for how to
+customize this style sheet.
 */
 
-@import url(http://rst2a.com/static/styles/html/default.css);
+/* used to remove borders from tables and images */
+.borderless, table.borderless td, table.borderless th {
+  border: 0 }
 
-html, body, div, span, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, a, dl, dt, dd, ol, ul, li, table, tbody, tfoot, thead, tr, th, td {
-	margin: 0;
-	padding: 0;
-	border: 0;
-	outline: 0;
-	font-weight: inherit;
-	font-style: inherit;
-	font-size: 100%;
-	font-family: Arial, Helvetica, sans-serif;
-	vertical-align: baseline;
-	background: transparent;
-    line-height: 1.2em;
-}
+table.borderless td, table.borderless th {
+  /* Override padding for "table.docutils td" with "! important".
+     The right padding separates the table cells. */
+  padding: 0 0.5em 0 0 ! important }
 
-body {line-height: 1; color: black; background: white; padding: 10px;}
-ol, ul { list-style: disc; }
-a { text-decoration: none; color: #000; font-size: 0.9em; }
-a:hover { text-decoration: none; font-size: 0.9em; color: #4e93b0; }
+.first {
+  /* Override more specific margin styles with "! important". */
+  margin-top: 0 ! important }
 
-table { border-collapse: collapse; border-spacing: 1; }
-caption, th, td { text-align: left; font-weight: normal;}
+.last, .with-subtitle {
+  margin-bottom: 0 ! important }
 
-.document h1.title { font-size: 1.8em; margin: .5em 0em; font-weight: bold; text-align: left; border-bottom: 1px solid #333; font-variant: small-caps;}
-.document .section h1 { font-size: 1.3em; margin: 1.3em 0 .5em 0; font-weight: bold; text-align: left; font-variant: small-caps;}
-.document .section .section h2 { font-weight: bold; font-size: 1.15em; }
-.document .section .section .section h3 { font-weight: bold;}
-.document p { margin: 0.8em 0.2em 0.8em 0.8em; font-size: 1em; }
-.document p a { color: #344c7c;  font-size: 1em !important;}
+.hidden {
+  display: none }
 
-.document .section .section { margin-left: 1.2em; margin-top: 1.2em}
-.document .section .section .section { margin: 1.1em 0 0 1.3em;}
+a.toc-backref {
+  text-decoration: none ;
+  color: black }
 
-.document .section ul, .document .section ol  { margin-left: 3em; font-size: 0.94em; }
-.document .section ul li, .document .section ol li { margin: 3px 0; }
-.document ul.auto-toc, .document .contents ul { margin-left: 18px; list-style: none; }
+blockquote.epigraph {
+  margin: 2em 5em ; }
 
-.document .section table { border: 3px solid #333; width: 100%;}
-.document .section table thead tr { background-color: #f3f3f3;}
-.document .section table thead tr th { font-weight: bold; text-align: left; padding: 0.3em 0.3em; margin: 0; border: 1px solid #666;  border-bottom: 2px solid #e3e3e3;}
-.document .section table tbody tr td { font-size: 0.85em; text-align: left; padding: 0.3em 0.3em; margin: 0; border: 1px solid #666;}
-.document .section table tbody tr td p { margin: 0; font-size: 1em;}
-.document .section table tbody tr td ul { margin: 0.3em 0.8em; font-size: 1em;}
+dl.docutils dd {
+  margin-bottom: 0.5em }
 
-.document pre { border: 1px solid #e3e3e3; background-color: #f3f3f3; padding: 6px; font-family: monospace;}
-.document span.pre { font-family: monospace; background-color: transparent; font-size: 1.2em; font-weight: bold; color: #4488c2; }
-.document tt { background-color: transparent;}
-    
-    
-.document div.contents { background-color: #f3f3f3; border: 1px solid #e3e3e3; float:right; margin: 0 0 10px 20px; padding: 10px 20px 2px 20px; }
-.document div.contents a { color: #344c7c;}
-.document div.contents a:hover { color: #4e93b0;}
-.document div.contents .topic-title { margin-bottom: 8px; }
-.document div.contents .topic-title a {font-size: 1.2em; color: #000;}
+/* Uncomment (and remove this text!) to get bold-faced definition list terms
+dl.docutils dt {
+  font-weight: bold }
+*/
+
+div.abstract {
+  margin: 2em 5em }
+
+div.abstract p.topic-title {
+  font-weight: bold ;
+  text-align: center }
+
+div.admonition, div.attention, div.caution, div.danger, div.error,
+div.hint, div.important, div.note, div.tip, div.warning {
+  margin: 2em ;
+  border: medium outset ;
+  padding: 1em }
+
+div.admonition p.admonition-title, div.hint p.admonition-title,
+div.important p.admonition-title, div.note p.admonition-title,
+div.tip p.admonition-title {
+  font-weight: bold ;
+  font-family: sans-serif }
+
+div.attention p.admonition-title, div.caution p.admonition-title,
+div.danger p.admonition-title, div.error p.admonition-title,
+div.warning p.admonition-title {
+  color: red ;
+  font-weight: bold ;
+  font-family: sans-serif }
+
+/* Uncomment (and remove this text!) to get reduced vertical space in
+   compound paragraphs.
+div.compound .compound-first, div.compound .compound-middle {
+  margin-bottom: 0.5em }
+
+div.compound .compound-last, div.compound .compound-middle {
+  margin-top: 0.5em }
+*/
+
+div.dedication {
+  margin: 2em 5em ;
+  text-align: center ;
+  font-style: italic }
+
+div.dedication p.topic-title {
+  font-weight: bold ;
+  font-style: normal }
+
+div.figure {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+div.footer, div.header {
+  clear: both;
+  font-size: smaller }
+
+div.line-block {
+  display: block ;
+  margin-top: 1em ;
+  margin-bottom: 1em }
+
+div.line-block div.line-block {
+  margin-top: 0 ;
+  margin-bottom: 0 ;
+  margin-left: 1.5em }
+
+div.sidebar {
+  margin: 0 0 0.5em 1em ;
+  border: medium outset ;
+  padding: 1em ;
+  background-color: #ffffee ;
+  width: 40% ;
+  float: right ;
+  clear: right }
+
+div.sidebar p.rubric {
+  font-family: sans-serif ;
+  font-size: medium }
+
+div.system-messages {
+  margin: 5em }
+
+div.system-messages h1 {
+  color: red }
+
+div.system-message {
+  border: medium outset ;
+  padding: 1em }
+
+div.system-message p.system-message-title {
+  color: red ;
+  font-weight: bold }
+
+div.topic {
+  margin: 2em }
+
+h1.section-subtitle, h2.section-subtitle, h3.section-subtitle,
+h4.section-subtitle, h5.section-subtitle, h6.section-subtitle {
+  margin-top: 0.4em }
+
+h1.title {
+  text-align: center }
+
+h2.subtitle {
+  text-align: center }
+
+hr.docutils {
+  width: 75% }
+
+img.align-left, .figure.align-left{
+  clear: left ;
+  float: left ;
+  margin-right: 1em }
+
+img.align-right, .figure.align-right {
+  clear: right ;
+  float: right ;
+  margin-left: 1em }
+
+.align-left {
+  text-align: left }
+
+.align-center {
+  clear: both ;
+  text-align: center }
+
+.align-right {
+  text-align: right }
+
+/* reset inner alignment in figures */
+div.align-right {
+  text-align: left }
+
+/* div.align-center * { */
+/*   text-align: left } */
+
+ol.simple, ul.simple {
+  margin-bottom: 1em }
+
+ol.arabic {
+  list-style: decimal }
+
+ol.loweralpha {
+  list-style: lower-alpha }
+
+ol.upperalpha {
+  list-style: upper-alpha }
+
+ol.lowerroman {
+  list-style: lower-roman }
+
+ol.upperroman {
+  list-style: upper-roman }
+
+p.attribution {
+  text-align: right ;
+  margin-left: 50% }
+
+p.caption {
+  font-style: italic }
+
+p.credits {
+  font-style: italic ;
+  font-size: smaller }
+
+p.label {
+  white-space: nowrap }
+
+p.rubric {
+  font-weight: bold ;
+  font-size: larger ;
+  color: maroon ;
+  text-align: center }
+
+p.sidebar-title {
+  font-family: sans-serif ;
+  font-weight: bold ;
+  font-size: larger }
+
+p.sidebar-subtitle {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+p.topic-title {
+  font-weight: bold }
+
+pre.address {
+  margin-bottom: 0 ;
+  margin-top: 0 ;
+  font: inherit }
+
+pre.literal-block, pre.doctest-block {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+span.classifier {
+  font-family: sans-serif ;
+  font-style: oblique }
+
+span.classifier-delimiter {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+span.interpreted {
+  font-family: sans-serif }
+
+span.option {
+  white-space: nowrap }
+
+span.pre {
+  white-space: pre }
+
+span.problematic {
+  color: red }
+
+span.section-subtitle {
+  /* font-size relative to parent (h1..h6 element) */
+  font-size: 80% }
+
+table.citation {
+  border-left: solid 1px gray;
+  margin-left: 1px }
+
+table.docinfo {
+  margin: 2em 4em }
+
+table.docutils {
+  margin-top: 0.5em ;
+  margin-bottom: 0.5em }
+
+table.footnote {
+  border-left: solid 1px black;
+  margin-left: 1px }
+
+table.docutils td, table.docutils th,
+table.docinfo td, table.docinfo th {
+  padding-left: 0.5em ;
+  padding-right: 0.5em ;
+  vertical-align: top }
+
+table.docutils th.field-name, table.docinfo th.docinfo-name {
+  font-weight: bold ;
+  text-align: left ;
+  white-space: nowrap ;
+  padding-left: 0 }
+
+h1 tt.docutils, h2 tt.docutils, h3 tt.docutils,
+h4 tt.docutils, h5 tt.docutils, h6 tt.docutils {
+  font-size: 100% }
+
+ul.auto-toc {
+  list-style-type: none }
 
 </style>
 </head>
 <body>
 <div class="document" id="encrarch-encrypt-and-archive">
 <h1 class="title">encrarch - Encrypt and Archive</h1>
+
 <p><strong>encrarch</strong> uses GnuPG to create an encrypted archive of one or more files in a source directory.  Its main use is for securely storing disk 2 disk backups on removable media, like external hard drives.  The removable media can be manually rotated on a schedule to create weekly, monthly, yearly, etc. archives.</p>
 <p><strong>encrarch</strong> relies on GnuPG.  Safe key handling is crucial to the security of the system, and your ability to recover from the encrypted backups.  (See PRECAUTIONS)</p>
-<div class="section">
-<h1><a id="requirements" name="requirements">REQUIREMENTS</a></h1>
+<div class="section" id="requirements">
+<h1>REQUIREMENTS</h1>
 <ul class="simple">
 <li>Designed for UNIX/Linux - May require modification to run on Windows</li>
 <li>Python 2.6+</li>
 <li>GnuPG</li>
 </ul>
 </div>
-<div class="section">
-<h1><a id="installation" name="installation">INSTALLATION</a></h1>
+<div class="section" id="installation">
+<h1>INSTALLATION</h1>
 <ul class="simple">
-<li>Install the python-gnupg package from <a class="reference" href="http://code.google.com/p/python-gnupg/">http://code.google.com/p/python-gnupg/</a>
+<li>Install the python-gnupg package from <a class="reference external" href="http://code.google.com/p/python-gnupg/">http://code.google.com/p/python-gnupg/</a>
 (Example shows fetching current version - Adjust accordingly)</li>
 </ul>
 <pre class="literal-block">
@@ -108,8 +340,8 @@ cp encrarch.py /usr/local/bin
 <li>For QNAP or other systems that use a &quot;ramdrive&quot; that is erased on boot up, store <em>encrarch.py</em> in a persistent location.  (For instance, on QNAP, under a share.)  <strong>GnuPG settings and keys will also be lost on reboot for most of these systems.  Make sure to save the user's ~/.gnupg folder after making changes.  A simple script to copy this back into place on boot will take care of the rest.</strong></li>
 </ul>
 </div>
-<div class="section">
-<h1><a id="gnupg-setup-and-key-handling" name="gnupg-setup-and-key-handling">GNUPG SETUP AND KEY HANDLING</a></h1>
+<div class="section" id="gnupg-setup-and-key-handling">
+<h1>GNUPG SETUP AND KEY HANDLING</h1>
 <p>For those unfamiliar with Gnu Privacy Guard, some basic setup is required before use.</p>
 <ul class="simple">
 <li>A pubic/secret keypair must be created.  As the user that will run <em>encrarch.py</em>, you can create a new key as follows:</li>
@@ -168,8 +400,8 @@ gpg -a --export-secret-keys &gt; ancient1-1045-01-13-private.asc
 gpg --import &lt; IMPORTKEYFILE
 </pre>
 </div>
-<div class="section">
-<h1><a id="precautions" name="precautions">PRECAUTIONS</a></h1>
+<div class="section" id="precautions">
+<h1>PRECAUTIONS</h1>
 <p><strong>READ THESE PRECAUTIONS CAREFULLY!</strong> Failure to follow these guidelines may result in a useless archive or data theft!  Note the massive overuse of bold text and capitals below are for good reason.  Yes: I am yelling!</p>
 <ul class="simple">
 <li><strong>PRIVATE KEYS EXPORTED TO USB DRIVES ARE NOT ENCRYPTED!!!!</strong> - Unmount the drive and store in a safety deposit box or safe. It is for emergency use ONLY!</li>
@@ -179,8 +411,8 @@ gpg --import &lt; IMPORTKEYFILE
 <li><strong>TEST YOUR RECOVERY PROCESS!!!</strong> - What good is a backup you can't use?  Make sure to test your backup process, and include test recoveries of <em>encrarch</em> created archives with your regular disaster recovery tests.</li>
 </ul>
 </div>
-<div class="section">
-<h1><a id="configuration" name="configuration">CONFIGURATION</a></h1>
+<div class="section" id="configuration">
+<h1>CONFIGURATION</h1>
 <p>encrarch requires a Python configparser configuration file.  (Future versions may support full configuration via command line.)</p>
 <p>Use the included <em>encrarch.conf-SAMPLE</em> as a starting point, copying it to <em>/etc/encrarch.conf</em> (standard systems) or in a safe/persistent location (QNAP/other flash systems).  If the file is not named <em>/etc/encrarch.conf</em>, you must set it via command line with the <em>-c CONFIGFILE</em> option.  Each configuration file defines a source, a destination, and a key to encrypt to.  Use multiple files as needed.</p>
 <p>The following outlines configuration steps, showing example settings that may or may not be useful.  You MUST customize your configuration!</p>
@@ -201,6 +433,12 @@ sourcebase = /mnt/backups
 </ul>
 <pre class="literal-block">
 sourcematch = \*.vbk
+</pre>
+<ul class="simple">
+<li>Enable skipping of older files with the same starting name.  Most backup systems create files that start with the job name and then have a timestamp.  For instance, VEEAM uses &quot;JOBNAMEYYYY-MM-DDThhmmss.vbk&quot;.  If multiple full backups are in the same folder and are part of the same job, this feature allows you to skip all but the latest (by modification stamp on the file).  Comment out to disable the feature.</li>
+</ul>
+<pre class="literal-block">
+sourcejobnameregex = ^(.+)\d{4}\-\d{2}\-\d{2}T\d{6}\.vbk
 </pre>
 <ul class="simple">
 <li>Set the base directory to archive to.  Archived files will be stored in time stamped subfolders of this base.</li>
@@ -318,8 +556,8 @@ loglevel = DEBUG
 pidfile = /var/tmp/%(instancename)s.pid
 </pre>
 </div>
-<div class="section">
-<h1><a id="usage" name="usage">USAGE</a></h1>
+<div class="section" id="usage">
+<h1>USAGE</h1>
 <p>If you run encrarch without any options, it will use the default configuration file <em>/etc/encrarch.conf</em></p>
 <pre class="literal-block">
 encrarch.py
@@ -363,8 +601,8 @@ gpg -do DESTINATIONFILENAME SOURCEFILENAME
 gpg -do /share/Recovery/FullBackup.vbk /mnt/sdc1/2012-11/FullBackup/FullBackup.vbk.gpg
 </pre>
 </div>
-<div class="section">
-<h1><a id="additional-information" name="additional-information">ADDITIONAL INFORMATION</a></h1>
+<div class="section" id="additional-information">
+<h1>ADDITIONAL INFORMATION</h1>
 <ul class="simple">
 <li><em>pydoc encrarch</em> - Embedded documentation from encrarch.py</li>
 <li><em>man gpg</em> - GnuPG main manual page</li>
@@ -377,7 +615,7 @@ gpg -do /share/Recovery/FullBackup.vbk /mnt/sdc1/2012-11/FullBackup/FullBackup.v
 </tr>
 </tbody>
 </table>
-<p>Paul M. Hirsch &lt;<a class="reference" href="mailto:paul.hirsch&#64;citon.com">paul.hirsch&#64;citon.com</a>&gt;</p>
+<p>Paul M. Hirsch &lt;<a class="reference external" href="mailto:paul.hirsch&#64;citon.com">paul.hirsch&#64;citon.com</a>&gt;</p>
 </div>
 </div>
 </body>

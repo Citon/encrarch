@@ -141,6 +141,12 @@ The following outlines configuration steps, showing example settings that may or
 
  sourcematch = \*.vbk
 
+* Enable skipping of older files with the same starting name.  Most backup systems create files that start with the job name and then have a timestamp.  For instance, VEEAM uses "JOBNAMEYYYY-MM-DDThhmmss.vbk".  If multiple full backups are in the same folder and are part of the same job, this feature allows you to skip all but the latest (by modification stamp on the file).  Comment out to disable the feature. 
+
+::
+
+ sourcejobnameregex = ^(.+)\d{4}\-\d{2}\-\d{2}T\d{6}\.vbk
+
 * Set the base directory to archive to.  Archived files will be stored in time stamped subfolders of this base.
 
 ::

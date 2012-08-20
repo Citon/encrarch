@@ -11,7 +11,7 @@
 #
 # Author: Paul Hirsch <paul.hirsch@citon.com>
 
-VERSION = "v0.32 (2012-01-17)"
+VERSION = "v0.33 (2012-08-20)"
 
 # General imports
 import sys, os, errno, traceback, time, re, datetime
@@ -25,26 +25,70 @@ import optparse  # Should add argparse support down the road
 
 # Logging imports
 import signal, logging, logging.handlers, smtplib, email, syslog
-#from email.mime.text import MIMEText
 
 # Defaults
 DEFCONFFILE = "/etc/encrarch.conf"
 DEFINSTANCENAME = "encrarch"
 
-def findSourceFiles (pattern, basepath):
+def findSourceFiles (pattern, duppattern, basepath):
     """
     Find files matching pattern under basepath. Return array with filename /
     relative path pairs. Uses fnmatch for filtering
     """
-    sourcefiles = []
+    sources = []
     for base, dirs, files in os.walk(basepath):
         # Only process files that match our filter
         for filename in fnmatch.filter(files, pattern):
             # Remove the source base path to get a relative path
             relpath = re.sub(r'^' + basepath, '', base)
-            sourcefiles.append([filename, relpath])
+            sources.append([filename, relpath])
 
-    return sourcefiles
+    # If the sourcejobnameregex feature is enabled, prune our filelist to
+    # only include the last modified file in a given folder that matches
+    # the regex and has a given matched name.
+    if duppattern:
+        sources = findLatestSourceFiles(duppattern, basepath, sources)
+
+    return sources
+
+
+def findLatestSourceFiles (pattern, basepath, sources):
+    """
+    Filter a sourcefile list for only the latest file in the list for each
+    subfolder and name pattern.
+    """
+    
+    osources = []
+    patdate = {}
+    patlatest = {}
+
+    # Process all files
+    for (filename, relpath) in sources:
+        m = re.search(pattern, filename)
+        if (m):
+            patkey = ":".join((relpath,m.group(1)))
+            # We matched, so process
+            mt = os.path.getmtime(os.path.normpath(os.sep.join((basepath,relpath,filename))))
+            if patdate.has_key(patkey):
+                if (patdate[patkey] < mt):
+                    # File is newer than previous, so update latest file info
+                    patdate[patkey] = mt
+                    patlatest[patkey] = [filename, relpath]
+
+            else:
+                # First match for the path and filename pattern
+                patdate[patkey] = mt
+                patlatest[patkey] = [filename, relpath]
+
+        else:
+            # File did not match pattern so just include it
+            osources.append([filename, relpath])
+
+    # Run through the list of latest files and add to our output
+    for patkey in patlatest:
+        osources.append(patlatest[patkey])
+
+    return osources
 
 
 def getFreeSpace(folder):
@@ -483,6 +527,14 @@ class Configure(ConfigParser.ConfigParser):
             # Spit out all missing parameters at once
             raise GeneralError(errs)
 
+        # Check if the sourcehobnameregex is defined.  This will allow
+        # skipping older files if there are multiple files with the same
+        # job name in a folder.
+        if self.has_option('encrarch', 'sourcejobnameregex'):
+            settings['sourcejobnameregex'] = self.get('encrarch', 'sourcejobnameregex')
+        else:
+            settings['sourcejobnameregex'] = False
+            
         # If SMTP reporting is enabled, check for those required values
         if self.has_option('encrarch', 'emailon'):
             settings['emailon'] = self.get('encrarch', 'emailon').lower()
@@ -664,12 +716,12 @@ def main ():
         starttime = time.time()
 
         # Find our source files and copy into temp folders
-        sources = findSourceFiles(sets['sourcematch'], sets['sourcebase'])
+        sources = findSourceFiles(sets['sourcematch'], sets['sourcejobnameregex'], sets['sourcebase'])
         
         if not (len(sources)):
             logger.warn("No suitable files matching %s found in %s" % (sets['sourcematch'], sets['sourcebase']))
             raise GeneralError("No Files To Backup")
-
+        
         # Make sure the GPG key exists before wasting a bunch of cycles
         recuser = lookupKeyFingerprint(sets['gpgbinary'], sets['gpghome'], sets['encryptto'])
 

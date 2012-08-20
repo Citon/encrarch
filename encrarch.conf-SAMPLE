@@ -8,8 +8,33 @@ instancename = encrarch
 # The base directory to search in
 sourcebase = /share/backups
 
-# A regular expression to match files to archive
+# A simple glob (filesystem match) for the filenames to include in the backup
 sourcematch = *.vbk
+
+# Set the sourcejobnameregex to copy only the latest file in a folder
+# with the prefix that matches the regular expression.  Each folder/prefix
+# pair is treated seprately.
+# !!!IMPORTANT NOTE: The latest is determined by the modify date on the
+# file and not based on the file name!!!!
+#
+# Example: A typical VEEAM backup name is in the format:
+#   JOBNAMEYYYY-MM-DDThhmmss.vbk
+# The pattern to remove the date portion from the job would be:
+#   ^(.+)\d{4}\-\d{2}\-\d{2}T\d{6}\.vbk
+#
+# For the following file list:			Modified
+#  d1/bigbackup2012-10-11T123456.vbk		October 11, 2012 - 12:34:56
+#  d1/bigbackup2012-10-11T123457.vbk		October 11, 2012 - 12:34:57
+#  d1/notsobigbackup2012-10-10T123456.vbk	October 10, 2012 - 12:34:56
+#  d2/bigbackup1999-01-01T123456.vbk		January 1, 1999 - 12:34:56
+#
+# The following files would be included in the backup:  
+#  d1/bigbackup2012-10-11T123457.vbk	      October 11, 2012 - 12:34:57 
+#  d1/notsobigbackup2012-10-10T123456.vbk     October 10, 2012 - 12:34:56
+#  d2/bigbackup1999-01-01T123456.vbk	      January 1, 1999 - 12:34:56
+#
+# Alter the regex as needed to match your backup files or comment out to disable
+sourcejobnameregex = ^(.+)\d{4}\-\d{2}\-\d{2}T\d{6}\.vbk
 
 # Root path to destination - Backups will be placed in subfolders here
 destroot = /mnt/externaldrive
