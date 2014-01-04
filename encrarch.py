@@ -7,7 +7,7 @@
 #
 # ! Requires gnupg module from http://code.google.com/p/python-gnupg/ !
 #
-# Copyright(c) 2013, Citon Computer Corporation
+# Copyright(c) 2014, Citon Computer Corporation
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -33,7 +33,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-VERSION = "v1.0 (2013-10-27)"
+VERSION = "v1.1 (2014-01-04)"
 
 # General imports
 import sys, os, errno, traceback, time, re, datetime
@@ -52,7 +52,7 @@ import signal, logging, logging.handlers, smtplib, email, syslog
 DEFCONFFILE = "/etc/encrarch.conf"
 DEFINSTANCENAME = "encrarch"
 
-def findSourceFiles (pattern, duppattern, basepath):
+def findSourceFiles (pattern, duppattern, basepath, pathpattern):
     """
     Find files matching pattern under basepath. Return array with filename /
     relative path pairs. Uses fnmatch for filtering
@@ -63,7 +63,15 @@ def findSourceFiles (pattern, duppattern, basepath):
         for filename in fnmatch.filter(files, pattern):
             # Remove the source base path to get a relative path
             relpath = re.sub(r'^' + basepath, '', base)
-            sources.append([filename, relpath])
+
+            # If sourcedirregex is used, check the relative path against
+            # the pattern before including files
+            if pathpattern:
+                m = re.search(pathpattern, relpath)
+                if (m):
+                    sources.append([filename, relpath])
+            else:
+                sources.append([filename, relpath])
 
     # If the sourcejobnameregex feature is enabled, prune our filelist to
     # only include the last modified file in a given folder that matches
@@ -556,6 +564,14 @@ class Configure(ConfigParser.ConfigParser):
             settings['sourcejobnameregex'] = self.get('encrarch', 'sourcejobnameregex')
         else:
             settings['sourcejobnameregex'] = False
+
+        # Check if the sourcedirregex is defined.  This allows matching only
+        # specific folders.
+        if self.has_option('encrarch', 'sourcedirregex'):
+            settings['sourcedirregex'] = self.get('encrarch', 'sourcedirregex')
+        else:
+            settings['sourcedirregex'] = False
+
             
         # If SMTP reporting is enabled, check for those required values
         if self.has_option('encrarch', 'emailon'):
@@ -738,7 +754,7 @@ def main ():
         starttime = time.time()
 
         # Find our source files and copy into temp folders
-        sources = findSourceFiles(sets['sourcematch'], sets['sourcejobnameregex'], sets['sourcebase'])
+        sources = findSourceFiles(sets['sourcematch'], sets['sourcejobnameregex'], sets['sourcebase'], sets['sourcedirregex'])
         
         if not (len(sources)):
             logger.warn("No suitable files matching %s found in %s" % (sets['sourcematch'], sets['sourcebase']))

@@ -147,6 +147,12 @@ The following outlines configuration steps, showing example settings that may or
 
  sourcejobnameregex = ^(.+)\d{4}\-\d{2}\-\d{2}T\d{6}\.vbk
 
+* Enable a pattern to search for in the folders containing backups.  If defined, this pattern must be found in the relative path containing your backup files, else the files are skipped.  This is checked at underneath each file, so it does not block walking into subfolders.  The example shows a match where the folders with backups must all be in a HOSTNAME-YYYY-MM-DD format.
+
+::
+
+ sourcedirregex = ^.+\/[^\/]+\-\d{4}\-\d{2}\-\d{2}$
+
 * Set the base directory to archive to.  Archived files will be stored in time stamped subfolders of this base.
 
 ::

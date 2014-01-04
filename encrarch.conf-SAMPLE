@@ -36,6 +36,13 @@ sourcematch = *.vbk
 # Alter the regex as needed to match your backup files or comment out to disable
 sourcejobnameregex = ^(.+)\d{4}\-\d{2}\-\d{2}T\d{6}\.vbk
 
+# Optional regex pattern to match against the relative directory portion
+# for a source.  This is matched against folders relative to your source
+# base directory, so do not include the source directory path in this regex.
+# Added for backups that use one folder per-backup.  Example shows match
+# for a folder like "somepath/hostname-YYYY-MM-DD/" that includes a date.
+#sourcedirregex = ^.+\/[^\/]+\d{4}\-\d{2}\-\d{2}$
+
 # Root path to destination - Backups will be placed in subfolders here
 destroot = /mnt/externaldrive
 
